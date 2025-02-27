@@ -5,8 +5,25 @@ public class UiPlayerStats : MonoBehaviour
 {
     [SerializeField] private TextMeshProUGUI playerText;
 
-    private void ChangeText(int health)
+    #region Events
+    private void OnEnable()
     {
-        playerText.text = $"Player Health: {health}";
+        HealthSystem.OnHealthChanged += ChangeText;
+    }
+
+    private void OnDisable()
+    {
+        HealthSystem.OnHealthChanged -= ChangeText;
+    }
+
+    private void OnDestroy()
+    {
+        HealthSystem.OnHealthChanged -= ChangeText;
+    }
+    #endregion
+
+    private void ChangeText(ushort health)
+    {
+        playerText.text = $"Player Health: {health.ToString()}";
     }
 }

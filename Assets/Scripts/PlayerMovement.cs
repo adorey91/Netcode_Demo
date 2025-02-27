@@ -1,64 +1,116 @@
+using System;
+using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.UIElements;
 
-public class PlayerMovement : MonoBehaviour
+public class PlayerMovement : NetworkBehaviour
 {
     [SerializeField] private float playerSpeed = 5f;
     [SerializeField] private float rotationSpeed = 180f;
     [SerializeField] private GameObject ballPrefab;
 
+    private HealthSystem healthSystem;
+
     private Rigidbody rb;
+    private Vector3 movement;
+    private bool isGrounded = false;
+
+    private bool isJumping = false;
+    private Vector3 forward;
+
+    private float moveX;
+
+    [SerializeField] private LayerMask layerMask;
+
+
+    public override void OnNetworkSpawn()
+    {
+        if (!IsOwner)
+        {
+            enabled = false;
+            return;
+        }
+
+        if (IsHost || NetworkObjectId == 1)
+            transform.SetLocalPositionAndRotation(new Vector3(14, 1, 0), Quaternion.Euler(0, -90, 0));
+        else
+            transform.SetLocalPositionAndRotation(new Vector3(-14, 1, 0), Quaternion.Euler(0, 90, 0));
+    }
 
     private void Start()
     {
+        healthSystem = GetComponent<HealthSystem>();
         rb = GetComponent<Rigidbody>();
     }
 
     private void Update()
     {
-        Shoot();
-        
-        Vector3 forward = transform.TransformDirection(Vector3.forward);
+        if (isJumping && rb.velocity.y == 0)
+            isJumping = false;
+
+        forward = transform.TransformDirection(Vector3.forward);
         Debug.DrawRay(transform.position, forward, Color.green);
     }
 
     private void FixedUpdate()
     {
-        Jump();
-
-        Move(InputManager.Movement);
+        Movement();
     }
 
-    private void Move(Vector3 moveInput)
+    public void Move(InputAction.CallbackContext context)
     {
-        if(moveInput.x != 0)
+        if (context.performed)
         {
-            Quaternion toRotation = Quaternion.LookRotation(moveInput, Vector3.up);
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, toRotation, (rotationSpeed * 10) * Time.fixedDeltaTime);
-        }
-
-        //apply multipliers
-        moveInput *= playerSpeed * Time.fixedDeltaTime;
-        moveInput.z = 0;
-        moveInput.y = 0;
-
-        //apply movement
-        rb.MovePosition(rb.position + moveInput);
-    }
-
-    private void Jump()
-    {
-        if(InputManager.JumpWasPressed)
-        {
-
+            moveX = context.ReadValue<Vector2>().x;
         }
     }
 
-    private void Shoot()
+    private void Movement()
     {
-        if(InputManager.ShootWasPressed)
+        Turn(moveX);
+        moveX *= playerSpeed * Time.fixedDeltaTime;
+        rb.MovePosition(rb.position + new Vector3(moveX, 0, 0));
+    }
+
+    private void Turn(float moveInput)
+    {
+        if (moveInput < 0)
+            transform.rotation = Quaternion.Euler(0, -90, 0);
+        else if (moveInput > 0)
+            transform.rotation = Quaternion.Euler(0, 90, 0);
+    }
+
+    public void Jump(InputAction.CallbackContext context)
+    {
+        if (context.performed)
+        {
+            if (Physics.Raycast(transform.position, Vector3.down, 1.1f, layerMask))
+            {
+                isGrounded = true;
+            }
+
+            if (!isJumping & isGrounded)
+            {
+                isJumping = true;
+                rb.AddForce(Vector3.up * 5, ForceMode.Impulse);
+            }
+            else
+            {
+                Debug.Log("Already jumping");
+            }
+        }
+    }
+
+    public void Shoot(InputAction.CallbackContext context)
+    {
+        if (context.performed)
         {
             Debug.Log("shoot ball");
-            GameObject fireball = Instantiate(ballPrefab, Vector3.forward, Quaternion.identity);
+            GameObject fireball = Instantiate(ballPrefab, transform.position + forward, transform.rotation);
+            fireball.GetComponent<BallAction>().SetOwner(gameObject);
+            fireball.GetComponent<Rigidbody>().isKinematic = false;
+            fireball.GetComponent<Rigidbody>().velocity = transform.right * 10;
         }
     }
 }

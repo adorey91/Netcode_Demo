@@ -1,9 +1,12 @@
 using UnityEngine;
+using System;
+using Unity.Netcode;
 
-public class HealthSystem : MonoBehaviour
+public class HealthSystem : NetworkBehaviour
 {
-    [SerializeField] private int healthCount = 5;
+    [SerializeField] private ushort healthCount = 5;
 
+    public static Action <ushort> OnHealthChanged;
 
     internal void TakeDamage()
     {
@@ -12,11 +15,14 @@ public class HealthSystem : MonoBehaviour
         {
             Debug.Log("player died");
         }
+        OnHealthChanged?.Invoke(healthCount);
     }
 
     internal void Heal()
     {
         if (healthCount == 5) return;
         healthCount++;
+
+        OnHealthChanged?.Invoke(healthCount);
     }
 }
