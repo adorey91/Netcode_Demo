@@ -13,7 +13,6 @@ GameObject:
   - component: {fileID: 7570857989836463232}
   - component: {fileID: 1885442140763237173}
   - component: {fileID: 8276966796499835861}
-  - component: {fileID: 1713103373941744630}
   - component: {fileID: 6761691764790155850}
   - component: {fileID: 7317267733978590974}
   - component: {fileID: 5243444301612140142}
@@ -99,6 +98,8 @@ MonoBehaviour:
   playerSpeed: 5
   rotationSpeed: 60
   ballPrefab: {fileID: 7622723731027697843, guid: 191ca7d8dba826d46ad9524adbfa9272, type: 3}
+  maxHealth: 5
+  numberPrefab: {fileID: 356198767364727238, guid: d27cd111706c04a4bba8e41f6b98df2b, type: 3}
   layerMask:
     serializedVersion: 2
     m_Bits: 8
@@ -129,19 +130,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 120
   m_CollisionDetection: 0
---- !u!114 &1713103373941744630
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1720542717246523742}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d988b94faad2bea47b5a525f36d67c5e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  healthCount: 5
 --- !u!114 &6761691764790155850
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -226,38 +214,6 @@ MonoBehaviour:
         m_CallState: 2
     m_ActionId: 8abbdb6e-4b84-4ad0-a3d7-e0026e0f567f
     m_ActionName: Player/Move[/Keyboard/a,/Keyboard/leftArrow,/Keyboard/d,/Keyboard/rightArrow]
-  - m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1885442140763237173}
-        m_TargetAssemblyTypeName: PlayerMovement, Assembly-CSharp
-        m_MethodName: Shoot
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-    m_ActionId: d8448e31-2907-4a4e-bbb2-11fa4d6662e7
-    m_ActionName: Player/Fire[/Keyboard/space]
-  - m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 1885442140763237173}
-        m_TargetAssemblyTypeName: PlayerMovement, Assembly-CSharp
-        m_MethodName: Jump
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-    m_ActionId: a2d45b95-3a14-4ff0-be71-683de7a08225
-    m_ActionName: Player/Jump[/Keyboard/upArrow,/Keyboard/w]
   - m_PersistentCalls:
       m_Calls: []
     m_ActionId: ee9eee81-cb68-481b-894c-92cd47133027
