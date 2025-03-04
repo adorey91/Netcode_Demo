@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Net;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
@@ -17,8 +18,14 @@ public class StartNetwork : MonoBehaviour
     [SerializeField] private TMP_Text networkText;
     [SerializeField] private TMP_InputField networkInput;
     [SerializeField] private TMP_Text serverText;
+    [SerializeField] private TMP_Text errorText;
     private UnityTransport _transport;
     public int port = 7777;
+
+    public static Action<string> OnNetworkError;
+    public static Action OnSendToMainMenu;
+    public static Action OnTurnOffClient;
+    public static Action OnTurnOnClient;
 
     private void Start()
     {
@@ -28,20 +35,62 @@ public class StartNetwork : MonoBehaviour
             Debug.LogError("UnityTransport component missing from NetworkManager.");
             return;
         }
+
         SetConnectedText(true);
         networkInput.onEndEdit.AddListener(ValidIpInput);
     }
 
+    private void OnEnable()
+    {
+        OnNetworkError +=  SetErrorText;
+        OnSendToMainMenu += SentToMainMenu;
+        OnTurnOffClient += TurnOffClient;
+        OnTurnOnClient += TurnOnClient;
+    }
+
+    private void OnDisable()
+    {
+        OnNetworkError -= SetErrorText;
+        OnSendToMainMenu -= SentToMainMenu;
+        OnTurnOffClient -= TurnOffClient;
+        OnTurnOnClient -= TurnOnClient;
+    }
+
+    private void OnDestroy()
+    {
+        OnNetworkError -= SetErrorText;
+        OnSendToMainMenu -= SentToMainMenu;
+        OnTurnOffClient -= TurnOffClient;
+        OnTurnOnClient -= TurnOnClient;
+    }
+
+    private IEnumerator SetError(string message)
+    {
+        errorText.enabled = true;
+        errorText.text = message;
+        yield return new WaitForSeconds(3f);
+        errorText.enabled = false;
+    }
+    
+    private void SetErrorText(string errorMessage)
+    {
+        StartCoroutine(SetError(errorMessage));
+    }
+    
+    private void TurnOffClient() => clientCanvas.enabled = false;
+    
+    private void TurnOnClient() => clientCanvas.enabled = true;
+    
     private void SetConnectedText(bool isValid)
     {
-        if(isValid)
+        if (isValid)
             networkText.text = $"Enter Server IP:";
         else
             networkText.text = $"Enter Server IP:\n Invalid Input";
-            
     }
-    
+
     #region Setting Ip Address
+
     private string GetLocalIPAddress()
     {
         try
@@ -87,37 +136,50 @@ public class StartNetwork : MonoBehaviour
         _transport.ConnectionData.Address = ip;
         _transport.ConnectionData.Port = 7777;
     }
-#endregion
 
-public void StartServer()
+    #endregion
+
+    private void SentToMainMenu()
+    {
+        SetActiveCanvas(startNetworkCanvas);
+    }
+    public void StartServer()
     {
         string localIP = GetLocalIPAddress();
 
         if (!string.IsNullOrEmpty(localIP))
         {
-            _transport.SetConnectionData("0.0.0.0",(ushort)port);
+            _transport.SetConnectionData("0.0.0.0", (ushort)port);
             Debug.Log("Starting server on " + localIP + ":" + port);
         }
         else
         {
+            SetActiveCanvas(startNetworkCanvas);
+            errorText.text = "Unable to find IP";
             Debug.LogError("Unable to get IP Address");
+            return;
         }
-        
+
         serverText.text = $"-Server-\n{GetLocalIPAddress()}";
-        
+
         NetworkManager.Singleton.StartServer();
+        SetActiveCanvas(serverCanvas);
+    }
+
+    private void SetActiveCanvas(Canvas canvas)
+    {
         startNetworkCanvas.enabled = false;
-        serverCanvas.enabled = true;
+        serverCanvas.enabled = false;
         clientCanvas.enabled = false;
+
+        canvas.enabled = true;
     }
 
     public void StartClient()
     {
         NetworkManager.Singleton.StartClient();
-        startNetworkCanvas.enabled = false;
-        serverCanvas.enabled = false;
-        clientCanvas.enabled = true;
-        isHost.enabled =false;
+        SetActiveCanvas(clientCanvas);
+        isHost.enabled = false;
     }
 
     public void StartHost()
@@ -126,18 +188,20 @@ public void StartServer()
 
         if (!string.IsNullOrEmpty(localIP))
         {
-            _transport.SetConnectionData("0.0.0.0",(ushort)port);
+            _transport.SetConnectionData("0.0.0.0", (ushort)port);
             Debug.Log("Starting host on " + localIP + ":" + port);
         }
         else
         {
+            SetActiveCanvas(startNetworkCanvas);
+            errorText.text = "Unable to get IP Address";
             Debug.LogError("Unable to get IP Address");
+            return;
         }
+
         isHost.text = $"Hosting on Server Address {GetLocalIPAddress()}";
         NetworkManager.Singleton.StartHost();
-        startNetworkCanvas.enabled = false;
-        serverCanvas.enabled = false;
-        clientCanvas.enabled = true;
-        isHost.enabled =true;
+        SetActiveCanvas(clientCanvas);
+        isHost.enabled = true;
     }
 }

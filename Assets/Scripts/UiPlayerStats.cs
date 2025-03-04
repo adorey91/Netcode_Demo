@@ -10,13 +10,12 @@ public class UiPlayerStats : MonoBehaviour
     [SerializeField] private TextMeshProUGUI playerText;
     [SerializeField] private Canvas deathPanel;
     [SerializeField] private TextMeshProUGUI deathText;
-    [SerializeField] private Button respawnButton;
     [SerializeField] private ButtonManager[] quitButton;
-
+private HealthSystem _playerHealth;
+    
     private void Start()
     {
         deathPanel.enabled = false;
-        // respawnButton.onClick.AddListener(Respawn);
         foreach (var button in quitButton)
         {
             button.onClick.AddListener(QuitGame);
@@ -64,9 +63,16 @@ public class UiPlayerStats : MonoBehaviour
         playerText.text = $"Player Health: {health.ToString()}";
     }
 
-    private void PlayerDeath()
+    private void PlayerDeath(HealthSystem player)
     {
+        StartNetwork.OnTurnOffClient?.Invoke();
         deathPanel.enabled = true;
-        deathText.text = "You died \n Play Again?";
+        _playerHealth = player;
+    }
+
+    public void RespawnPlayer()
+    {
+                _playerHealth.RespawnServerRpc();
+                deathPanel.enabled = false;
     }
 }

@@ -11,11 +11,6 @@ public class PlayerMovement : NetworkBehaviour
     [SerializeField] private float rotationSpeed = 180f;
     [SerializeField] private GameObject ballPrefab;
 
-    [Header("Health")]
-    [SerializeField] private int maxHealth = 5;
-
-    private int _currentHealth;
-
     private Rigidbody _rb;
     private Vector2 _movement;
     private bool _isGrounded;
@@ -24,7 +19,6 @@ public class PlayerMovement : NetworkBehaviour
     private Gamepad _gamepad;
 
     [SerializeField] private LayerMask layerMask;
-    public static Action<int> OnHealthChanged;
     public static Action OnPlayerDeath;
 
 
@@ -39,21 +33,23 @@ public class PlayerMovement : NetworkBehaviour
 
     private void Start()
     {
-        _currentHealth = maxHealth;
         _rb = GetComponent<Rigidbody>();
         _keyboard = Keyboard.current;
         
         if(Gamepad.current != null)
             _gamepad = Gamepad.current;
-        
-        OnHealthChanged?.Invoke(maxHealth);
     }
 
     private void Update()
     {
-        if (_keyboard.spaceKey.wasPressedThisFrame || _gamepad.rightTrigger.wasPressedThisFrame) Shoot();
+        if (_gamepad != null)
+        {
+            if(_gamepad.rightTrigger.wasPressedThisFrame) Shoot();
+            if (_gamepad.aButton.wasPressedThisFrame) Jump();
+        }
+        if (_keyboard.spaceKey.wasPressedThisFrame) Shoot();
 
-        if (_keyboard.upArrowKey.wasPressedThisFrame || _keyboard.wKey.wasPressedThisFrame || _gamepad.aButton.wasPressedThisFrame) Jump();
+        if (_keyboard.upArrowKey.wasPressedThisFrame || _keyboard.wKey.wasPressedThisFrame) Jump();
     }
 
     private void FixedUpdate()
@@ -105,26 +101,23 @@ public class PlayerMovement : NetworkBehaviour
 
     public void Shoot()
     {
-        ShootServerRPC();
-        //Debug.Log("shoot ball");
-        //GameObject fireball = Instantiate(ballPrefab, transform.position + forward, transform.rotation);
-        //BallAction ballAction = fireball.GetComponent<BallAction>();
-        //ballAction.SetOwner(gameObject);
-        //ballAction.SetDirection(forward);
+        ShootServerRPC(_forward); // Pass the forward direction
     }
 
     [ServerRpc]
-    private void ShootServerRPC(ServerRpcParams rpcParams = default)
+    private void ShootServerRPC(Vector3 direction, ServerRpcParams rpcParams = default)
     {
         var fireball = Instantiate(ballPrefab, transform.position + transform.forward * 1.5f, transform.rotation);
 
         if (!fireball.TryGetComponent<NetworkObject>(out var fireballNetObj)) return;
 
-        fireballNetObj.Spawn(true);
+        // Instead of assigning ownership, let the server control all fireballs
+        fireballNetObj.Spawn(false);
 
         // Ensure owner is set properly
         var ballAction = fireball.GetComponent<BallAction>();
-        ballAction.SetOwner(rpcParams.Receive.SenderClientId); // Use SenderClientId to track the correct owner
-        ballAction.SetDirection(_forward);
+        ballAction.SetOwner(rpcParams.Receive.SenderClientId);
+        ballAction.SetDirection(direction); // Set direction IMMEDIATELY on spawn
     }
+
 }

@@ -12,12 +12,13 @@ GameObject:
   - component: {fileID: 4357285788851367244}
   - component: {fileID: 7570857989836463232}
   - component: {fileID: 1885442140763237173}
+  - component: {fileID: 9144881304616121180}
   - component: {fileID: 8276966796499835861}
   - component: {fileID: 6761691764790155850}
   - component: {fileID: 7317267733978590974}
   - component: {fileID: 5243444301612140142}
   m_Layer: 0
-  m_Name: Player
+  m_Name: Player2
   m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -74,7 +75,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  GlobalObjectIdHash: 1726229743
+  GlobalObjectIdHash: 157186243
   InScenePlacedSourceGlobalObjectIdHash: 4209968203
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
@@ -98,11 +99,22 @@ MonoBehaviour:
   playerSpeed: 5
   rotationSpeed: 60
   ballPrefab: {fileID: 7622723731027697843, guid: 191ca7d8dba826d46ad9524adbfa9272, type: 3}
-  maxHealth: 5
-  numberPrefab: {fileID: 356198767364727238, guid: d27cd111706c04a4bba8e41f6b98df2b, type: 3}
   layerMask:
     serializedVersion: 2
     m_Bits: 8
+--- !u!114 &9144881304616121180
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1720542717246523742}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d988b94faad2bea47b5a525f36d67c5e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxHealthCount: 5
 --- !u!54 &8276966796499835861
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -321,7 +333,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: ac4d738d1579a4144b8f8974c9f2e159, type: 2}
+  - {fileID: 2100000, guid: 4fa64e9bcddd57e428326047b6299981, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0

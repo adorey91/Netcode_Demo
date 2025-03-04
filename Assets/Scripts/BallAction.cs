@@ -8,16 +8,16 @@ public class BallAction : NetworkBehaviour
     private ulong _ownerClientId;
     [SerializeField] private float lifetime = 5f;
     private float _timer;
-    private Rigidbody _rb;
+    [SerializeField] private Rigidbody rb;
     [ReadOnly] private float _speed = 10f;
     private Vector3 _direction;
 
     private void Start()
     {
         _timer = 0;
-        _rb = GetComponent<Rigidbody>();
-        _rb.isKinematic = false;
-            _rb.velocity = _direction * _speed;
+        // Ensure velocity is applied immediately
+        if (_direction != Vector3.zero)
+            rb.velocity = _direction * _speed;
     }
 
     internal void SetOwner(ulong owner)
@@ -28,6 +28,9 @@ public class BallAction : NetworkBehaviour
     internal void SetDirection(Vector3 shootDirection)
     {
         _direction = shootDirection.normalized;
+
+        if (!rb) // If Rigidbody is already initialized
+            rb.velocity = _direction * _speed;
     }
 
     private void Update()
