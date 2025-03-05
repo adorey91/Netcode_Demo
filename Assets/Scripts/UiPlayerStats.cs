@@ -11,8 +11,8 @@ public class UiPlayerStats : MonoBehaviour
     [SerializeField] private Canvas deathPanel;
     [SerializeField] private TextMeshProUGUI deathText;
     [SerializeField] private ButtonManager[] quitButton;
-private HealthSystem _playerHealth;
-    
+    private HealthSystem _playerHealth;
+
     private void Start()
     {
         deathPanel.enabled = false;
@@ -60,8 +60,13 @@ private HealthSystem _playerHealth;
 
     private void ChangeText(ushort health)
     {
-        playerText.text = $"Player Health: {health.ToString()}";
+        if (!NetworkManager.Singleton.LocalClient.PlayerObject.TryGetComponent(out HealthSystem localHealth)) return;
+
+        if (_playerHealth == null || _playerHealth != localHealth) return; // Only update the correct player UI
+    
+        playerText.text = $"Player Health: {health}";
     }
+
 
     private void PlayerDeath(HealthSystem player)
     {
@@ -72,7 +77,7 @@ private HealthSystem _playerHealth;
 
     public void RespawnPlayer()
     {
-                _playerHealth.RespawnServerRpc();
-                deathPanel.enabled = false;
+        _playerHealth.RespawnServerRpc();
+        deathPanel.enabled = false;
     }
 }

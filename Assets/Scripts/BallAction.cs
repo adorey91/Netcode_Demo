@@ -5,36 +5,65 @@ using UnityEngine;
 public class BallAction : NetworkBehaviour
 {    
     private PlayerMovement _player;
-    private ulong _ownerClientId;
     [SerializeField] private float lifetime = 5f;
     private float _timer;
     [SerializeField] private Rigidbody rb;
     [ReadOnly] private float _speed = 10f;
     private Vector3 _direction;
+    
+    private NetworkVariable<ulong> _ownerClientId = new NetworkVariable<ulong>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
     private void Start()
     {
         _timer = 0;
-        // Ensure velocity is applied immediately
+        rb.isKinematic = false;
+        rb.WakeUp();
+
         if (_direction != Vector3.zero)
             rb.velocity = _direction * _speed;
     }
 
+
     internal void SetOwner(ulong owner)
     {
-        _ownerClientId = owner;
+        if(!IsServer) return;
+        
+        _ownerClientId.Value = owner;
+        Debug.Log($"Fireball Owner Set: {_ownerClientId.Value}");
     }
 
     internal void SetDirection(Vector3 shootDirection)
     {
         _direction = shootDirection.normalized;
-
-        if (!rb) // If Rigidbody is already initialized
+        if (rb)
+        {
             rb.velocity = _direction * _speed;
+        }
+
+        if (IsOwner) // Apply instant movement on the client who shot it
+        {
+            rb.velocity = _direction * _speed;
+        }
+
+        // Let the server take control of physics afterward
+        if (IsServer)
+        {
+            rb.velocity = _direction * _speed;
+        }
     }
+
 
     private void Update()
     {
+        if (IsServer) // Ensure this runs only on the server
+        {
+            if (!IsOwnerAlive()) 
+            {
+                DespawnBallServerRPC();
+                return;
+            }
+        }
+
         if (_timer >= lifetime)
         {
             if (IsServer) // Only the server should despawn objects
@@ -44,32 +73,42 @@ public class BallAction : NetworkBehaviour
             _timer += Time.deltaTime;
     }
 
+    private bool IsOwnerAlive()
+    {
+        if (!IsServer) return true;
+
+        return NetworkManager.Singleton.ConnectedClients.ContainsKey(_ownerClientId.Value) &&
+               NetworkManager.Singleton.ConnectedClients[_ownerClientId.Value].PlayerObject != null &&
+               NetworkManager.Singleton.ConnectedClients[_ownerClientId.Value].PlayerObject.gameObject.activeInHierarchy;
+    }
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (collision.gameObject.CompareTag("Player"))
-        {
-            var hitPlayerNetObj = collision.gameObject.GetComponent<NetworkObject>();
+        var hitPlayerNetObj = collision.gameObject.GetComponent<NetworkObject>();
+        if (hitPlayerNetObj == null) return;
 
-            // Ensure we are checking against a valid NetworkObject
-            if (hitPlayerNetObj == null) return;
+        Debug.Log($"Fireball hit {hitPlayerNetObj.OwnerClientId}, Fireball owner: {_ownerClientId}");
 
-            // Check if the hit player is NOT the owner
-            if (hitPlayerNetObj.OwnerClientId == _ownerClientId) return;
-            collision.gameObject.GetComponent<HealthSystem>()?.TakeDamage();
-            DespawnBallServerRPC();
-        }
-        else
+        if (hitPlayerNetObj.OwnerClientId == _ownerClientId.Value) 
         {
-            DespawnBallServerRPC();
+            Debug.Log("Ignoring hit on owner.");
+            return;
         }
+
+        collision.gameObject.GetComponent<HealthSystem>()?.TakeDamage();
+        DespawnBallServerRPC();
     }
 
+    private bool _isDespawning = false;
 
     [ServerRpc(RequireOwnership = false)]
     private void DespawnBallServerRPC()
     {
-        if(TryGetComponent<NetworkObject>(out var ball))    
+        if (_isDespawning) return; // Prevent multiple calls
+        _isDespawning = true;
+    
+        if (TryGetComponent<NetworkObject>(out var ball))
             ball.Despawn();
     }
+
 }

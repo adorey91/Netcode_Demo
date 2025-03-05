@@ -1,39 +1,24 @@
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using System;
 
 public class PlayerMovement : NetworkBehaviour
 {
     [Header("Movement")]
     [SerializeField] private float playerSpeed = 5f;
 
-    [SerializeField] private float rotationSpeed = 180f;
-    [SerializeField] private GameObject ballPrefab;
-
     private Rigidbody _rb;
     private Vector2 _movement;
     private bool _isGrounded;
-    private Vector3 _forward;
     private Keyboard _keyboard;
     private Gamepad _gamepad;
 
     [SerializeField] private LayerMask layerMask;
-    public static Action OnPlayerDeath;
-
-
-    public override void OnNetworkSpawn()
-    {
-        if (!IsOwner)
-        {
-            enabled = false;
-            return;
-        }
-    }
 
     private void Start()
     {
         _rb = GetComponent<Rigidbody>();
+        _rb.isKinematic = false;
         _keyboard = Keyboard.current;
         
         if(Gamepad.current != null)
@@ -42,20 +27,30 @@ public class PlayerMovement : NetworkBehaviour
 
     private void Update()
     {
+        if(!IsOwner) return;
+        
+        GroundCheck(); // Ensure _isGrounded is updated
+
         if (_gamepad != null)
         {
-            if(_gamepad.rightTrigger.wasPressedThisFrame) Shoot();
-            if (_gamepad.aButton.wasPressedThisFrame) Jump();
+            if (_gamepad.aButton.wasPressedThisFrame && _isGrounded) Jump();
         }
-        if (_keyboard.spaceKey.wasPressedThisFrame) Shoot();
-
-        if (_keyboard.upArrowKey.wasPressedThisFrame || _keyboard.wKey.wasPressedThisFrame) Jump();
+    
+        if ((_keyboard.upArrowKey.wasPressedThisFrame || _keyboard.wKey.wasPressedThisFrame) && _isGrounded) Jump();
     }
+
+    private void GroundCheck()
+    {
+        // Adjust based on collider size
+        float rayLength = GetComponent<Collider>().bounds.extents.y + 0.1f;
+        _isGrounded = Physics.Raycast(transform.position, Vector3.down, rayLength, layerMask);
+    }
+
 
     private void FixedUpdate()
     {
-        _forward = transform.TransformDirection(Vector3.forward);
-        Debug.DrawRay(transform.position, _forward, Color.green);
+        if(!IsOwner) return;
+       
         Movement();
     }
 
@@ -88,36 +83,9 @@ public class PlayerMovement : NetworkBehaviour
         };
     }
 
-    public void Jump()
+    private void Jump()
     {
-        // if (Physics.Raycast(transform.position, Vector3.down, 1.1f, layerMask))
-        //     _isGrounded = true;
-        //
-        // if (_isGrounded)
-            _rb.AddForce(Vector3.up * 5, ForceMode.Impulse);
-        // else
-        //     Debug.Log("Already jumping");
+        if (_isGrounded)
+            _rb.AddForce(Vector3.up * 10, ForceMode.Impulse);
     }
-
-    public void Shoot()
-    {
-        ShootServerRPC(_forward); // Pass the forward direction
-    }
-
-    [ServerRpc]
-    private void ShootServerRPC(Vector3 direction, ServerRpcParams rpcParams = default)
-    {
-        var fireball = Instantiate(ballPrefab, transform.position + transform.forward * 1.5f, transform.rotation);
-
-        if (!fireball.TryGetComponent<NetworkObject>(out var fireballNetObj)) return;
-
-        // Instead of assigning ownership, let the server control all fireballs
-        fireballNetObj.Spawn(false);
-
-        // Ensure owner is set properly
-        var ballAction = fireball.GetComponent<BallAction>();
-        ballAction.SetOwner(rpcParams.Receive.SenderClientId);
-        ballAction.SetDirection(direction); // Set direction IMMEDIATELY on spawn
-    }
-
 }

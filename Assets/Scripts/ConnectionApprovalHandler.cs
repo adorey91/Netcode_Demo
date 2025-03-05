@@ -7,6 +7,8 @@ public class ConnectionApprovalHandler : NetworkBehaviour
     private const int MaxPlayers = 2;
     private bool _hostConnected;
     private ulong _firstClientId = ulong.MaxValue;
+    [SerializeField] private GameObject defaultPrefab;
+    [SerializeField] private GameObject alternatePrefab;
 
     private void Start()
     {
