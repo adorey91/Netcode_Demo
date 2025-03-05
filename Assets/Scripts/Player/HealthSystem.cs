@@ -2,40 +2,53 @@ using UnityEngine;
 using System;
 using System.Collections;
 using Unity.Netcode;
+using UnityEngine.UI;
 
 public class HealthSystem : NetworkBehaviour
 {
-    [SerializeField] private ushort maxHealthCount = 5;
+    [SerializeField] private RectTransform healthBar;
+
+    private ushort maxHealthCount;
+    public NetworkVariable<int> healthPoint = new();
     public NetworkVariable<ushort> health = new NetworkVariable<ushort>();
     [SerializeField] private ushort currentHealth;
+    
     private Vector3 _spawnLocation;
     public static Action<ushort> OnHealthChanged;
     public static Action<HealthSystem> OnPlayerDeath;
 
     private void Start()
     {
-        if (IsOwner) // Ensure only the local player subscribes to UI updates
-        {
-            health.OnValueChanged += (oldHealth, newHealth) =>
-            {
-                OnHealthChanged?.Invoke(newHealth);
-            };
-        }
-
         currentHealth = maxHealthCount;
         _spawnLocation = transform.position;
     }
 
+    private void OnEnable()
+    {
+        GetComponent<Health>().HealthPoint.OnValueChanged += HealthChanged;
+    }
+
+    private void OnDisable()
+    {
+        GetComponent<Health>().HealthPoint.OnValueChanged -= HealthChanged;
+    }
+
+    private void HealthChanged(int previousValue, int newValue)
+    {
+        if(IsOwner)
+            healthBar.transform.localScale = new Vector3((newValue / 100f), 1, 1);
+    }
 
     internal void TakeDamage()
     {
         if (currentHealth == 0) return; // Prevent taking damage if already dead
 
+        Debug.Log("Player Should take damage");
         PlayerSettingUI.OnDamageTaken?.Invoke();
-        
+
         if (IsServer)
         {
-            health.Value--; // Update NetworkVariable on the server
+            health.Value -= 10; // Update NetworkVariable on the server
             OnHealthChanged?.Invoke(health.Value);
         }
         else
@@ -55,7 +68,7 @@ public class HealthSystem : NetworkBehaviour
     {
         if (!IsServer) return;
 
-        health.Value--; 
+        health.Value -= 10; 
         OnHealthChanged?.Invoke(health.Value);
     }
 

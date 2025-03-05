@@ -88,4 +88,14 @@ public class PlayerMovement : NetworkBehaviour
         if (_isGrounded)
             _rb.AddForce(Vector3.up * 10, ForceMode.Impulse);
     }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (!IsServer) return;
+
+        if(collision.gameObject.GetComponent<BallAction>())
+        {
+            GetComponent<NetworkHealthState>().HealthPoint.Value -= 10;
+        }
+    }
 }

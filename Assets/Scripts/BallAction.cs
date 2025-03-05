@@ -84,18 +84,18 @@ public class BallAction : NetworkBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        var hitPlayerNetObj = collision.gameObject.GetComponent<NetworkObject>();
-        if (hitPlayerNetObj == null) return;
+        //var hitPlayerNetObj = collision.gameObject.GetComponent<NetworkObject>();
+        //if (hitPlayerNetObj == null) return;
 
-        Debug.Log($"Fireball hit {hitPlayerNetObj.OwnerClientId}, Fireball owner: {_ownerClientId}");
+        //Debug.Log($"Fireball hit {hitPlayerNetObj.OwnerClientId}, Fireball owner: {_ownerClientId}");
 
-        if (hitPlayerNetObj.OwnerClientId == _ownerClientId.Value) 
-        {
-            Debug.Log("Ignoring hit on owner.");
-            return;
-        }
+        //if (hitPlayerNetObj.OwnerClientId == _ownerClientId.Value) 
+        //{
+        //    Debug.Log("Ignoring hit on owner.");
+        //    return;
+        //}
 
-        collision.gameObject.GetComponent<HealthSystem>()?.TakeDamage();
+        //collision.gameObject.GetComponent<HealthSystem>()?.TakeDamage();
         DespawnBallServerRPC();
     }
 
