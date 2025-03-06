@@ -1,17 +1,17 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
-using Unity.Services.Matchmaker.Models;
 using UnityEngine;
 
 public class NetworkHealthState : NetworkBehaviour
 {
-    public NetworkVariable<int> HealthPoint = new();
+    [HideInInspector]
+    public NetworkVariable<int> health = new();
 
-
-    public override void OnNetworkSpawn()
+    public void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
-        HealthPoint.Value = 100;
+        health.Value = 100;
     }
 }

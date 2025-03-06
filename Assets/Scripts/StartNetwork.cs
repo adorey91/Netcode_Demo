@@ -204,4 +204,6 @@ public class StartNetwork : MonoBehaviour
         SetActiveCanvas(clientCanvas);
         isHost.enabled = true;
     }
+    
+    public void Quit() => Application.Quit();
 }
