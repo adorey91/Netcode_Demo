@@ -33,6 +33,6 @@ public class PlayerData : NetworkBehaviour
     [ServerRpc]
     private void GetNameServerRpc(string Name)
     {
-        this.Name.Value = Name;
+        this.Name.Value = "Player: " + Name;
     }
 }
