@@ -5,6 +5,7 @@ using UnityEngine;
 public class ConnectionApprovalHandler : NetworkBehaviour
 {
     private const int MaxPlayers = 2;
+    private static Dictionary<ulong, string> playerNames = new();
     private bool _hostConnected;
     private ulong _firstClientId = ulong.MaxValue;
     [SerializeField] private GameObject defaultPrefab;
@@ -58,8 +59,22 @@ public class ConnectionApprovalHandler : NetworkBehaviour
                 response.Rotation = Quaternion.Euler(0, -90, 0);
             }
         }
+        
+        // **Assign player names based on order**
+        if (!playerNames.ContainsKey(clientId))
+        {
+            if (playerNames.Count == 0)
+                playerNames[clientId] = "Player 1";
+            else
+                playerNames[clientId] = "Player 2";
+        }
 
         Debug.Log($"Client {clientId} assigned position {response.Position}");
         response.Pending = false;
+    }
+
+    public static string GetPlayerName(ulong clientId)
+    {
+        return playerNames.ContainsKey(clientId) ? playerNames[clientId] : "Unknown";
     }
 }

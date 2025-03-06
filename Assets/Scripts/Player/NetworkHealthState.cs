@@ -1,17 +1,18 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 
 public class NetworkHealthState : NetworkBehaviour
 {
     [HideInInspector]
-    public NetworkVariable<int> health = new();
+    public NetworkVariable<int> health = new(100, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
-    public void OnNetworkSpawn()
+    public override void OnNetworkSpawn() // Ensure override is here
     {
         base.OnNetworkSpawn();
-        health.Value = 100;
+        
+        if (IsServer) // Ensure only the server initializes the health
+        {
+            health.Value = 100;
+        }
     }
 }

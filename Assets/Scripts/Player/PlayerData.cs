@@ -14,25 +14,9 @@ public class PlayerData : NetworkBehaviour
         base.OnNetworkSpawn();
         if (!IsServer) return;
         Score.Value = 0;
-       
-        GetNameClientRpc(new ClientRpcParams
-        {
-            Send = new ClientRpcSendParams
-            {
-                TargetClientIds = new ulong[] {GetComponent<NetworkObject>().OwnerClientId}
-            }
-        });
-    }
-
-    [ClientRpc]
-    public void GetNameClientRpc(ClientRpcParams clientRpcParams = default)
-    {
-        GetNameServerRpc(OwnerClientId.ToString());
-    }
-
-    [ServerRpc]
-    private void GetNameServerRpc(string Name)
-    {
-        this.Name.Value = "Player: " + Name;
+        
+        // **Get player name from the connection handler**
+        string assignedName = ConnectionApprovalHandler.GetPlayerName(OwnerClientId);
+        Name.Value = assignedName; // **Now it syncs automatically**
     }
 }

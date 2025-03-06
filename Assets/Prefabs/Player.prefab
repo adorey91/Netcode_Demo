@@ -453,6 +453,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 72ca67124bbfa3d41ac3e15297810f56, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  playerObject: {fileID: 2830728701699268150}
+  playerCanvas: {fileID: 473056147425183137}
   playerSpeed: 5
   jumpForce: 10
 --- !u!54 &4064958278869618297
@@ -558,6 +560,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   healthBar: {fileID: 564209518250220455}
+  nameText: {fileID: 8356834454071649205}
 --- !u!114 &2685879616691151048
 MonoBehaviour:
   m_ObjectHideFlags: 0

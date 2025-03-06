@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -7,12 +8,19 @@ public class PlayerScript : NetworkBehaviour
 {
     // Variables
     [Header("Movement")]
+    public GameObject playerObject;
+
+    public Canvas playerCanvas;
     [SerializeField] private float playerSpeed = 10f;
-[SerializeField] private float jumpForce = 10f;
+    [SerializeField] private float jumpForce = 10f;
     private Vector3 _inputMovement;
     private Rigidbody _rb;
     private bool _jumpRequest;
-    
+
+    private NetworkVariable<bool> isDead = new(false, NetworkVariableReadPermission.Everyone,
+        NetworkVariableWritePermission.Server);
+
+    private NetworkHealthState _healthState;
     private NetworkCommunication _networkCommunication;
 
 
@@ -20,6 +28,7 @@ public class PlayerScript : NetworkBehaviour
     {
         _rb = GetComponent<Rigidbody>();
         _networkCommunication = GetComponent<NetworkCommunication>();
+        _healthState = GetComponent<NetworkHealthState>();
     }
 
     public override void OnNetworkSpawn()
@@ -43,8 +52,9 @@ public class PlayerScript : NetworkBehaviour
 
     private void FixedUpdate()
     {
-        if(!IsOwner) return;
-        
+        if (!IsOwner) return;
+        if (isDead.Value) return;
+
         //send movement input to server
         _networkCommunication.MovePlayerServerRpc(_inputMovement, playerSpeed);
 
@@ -55,15 +65,59 @@ public class PlayerScript : NetworkBehaviour
         }
     }
 
-    private void OnTriggerEnter(Collider other)
+    private void OnCollisionEnter(Collision collision)
     {
-        // Should only be called by the server
-        if(!IsServer) return;
-        
-        // checks for projectile and to make sure it's not owned by themselves.
-        if (other.GetComponent<Projectile>() && GetComponent<NetworkObject>().OwnerClientId != other.GetComponent<NetworkObject>().OwnerClientId)
+        if (!IsServer) return;
+
+        if (collision.gameObject.GetComponent<Projectile>() && GetComponent<NetworkObject>().OwnerClientId !=
+            collision.gameObject.GetComponent<NetworkObject>().OwnerClientId)
         {
-            GetComponent<NetworkHealthState>().health.Value -= 10;
+            Debug.Log("Collision Enter");
+            var networkObject = collision.gameObject.GetComponent<NetworkObject>();
+            _healthState.health.Value -= 10;
+
+            if (_healthState.health.Value <= 0)
+            {
+                DieServerRpc();
+            }
+
+            networkObject.Despawn();
         }
+    }
+
+
+    [ServerRpc(RequireOwnership = false)]
+    private void DieServerRpc()
+    {
+        if (!IsServer) return;
+
+        Debug.Log($"Player {OwnerClientId} died. Respawning...");
+        isDead.Value = true; // **Syncs across all clients**
+
+        // **Disable physics and rendering**
+        _rb.isKinematic = true;
+        _rb.velocity = Vector3.zero;
+        _rb.angularVelocity = Vector3.zero;
+        playerObject.SetActive(false);
+        playerCanvas.enabled = false;
+
+        // **Notify the GameManager to handle respawn**
+        GameManager.Instance.RespawnPlayer(this);
+    }
+
+    [ClientRpc]
+    private void RespawnClientRpc()
+    {
+        // **Re-enable everything on the client**
+        playerObject.SetActive(true);
+        playerCanvas.enabled = true;
+        _rb.isKinematic = false;
+    }
+
+
+    public void Respawn()
+    {
+        isDead.Value = false; // **Syncs across clients**
+        RespawnClientRpc();
     }
 }
